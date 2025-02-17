@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinGo Prediction</title>
+  <style>
+    body {
+      background-color: black;
+      color: red;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    .header {
+      background-color: gold;
+      color: white;
+      padding: 10px;
+      border: 2px solid red;
+      border-radius: 10px;
+      box-shadow: 0 0 15px red;
+      font-size: 1.5em;
+    }
+
+    .button {
+      background-color: red;
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 350px;
+      height: 400px;
+      background-color: black;
+      border: 2px solid red;
+      border-radius: 10px;
+      box-shadow: 0 0 15px red;
+      text-align: center;
+      padding-top: 20px;
+    }
+
+    .popup-header {
+      color: red;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+    .popup-content {
+      font-size: 2em;
+      margin: 20px 0;
+      transition: all 0.5s ease-in-out;
+    }
+
+    .timer {
+      color: yellow;
+      font-size: 1.5em;
+    }
+
+    .delhi-time {
+      color: cyan;
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+
+    .popup-footer {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+    }
+
+    .popup-footer button {
+      background-color: black;
+      color: red;
+      border: 1px solid red;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+
+    .popup-footer button:hover {
+      background-color: red;
+      color: white;
+    }
+
+    .scoreboard {
+      color: white;
+      font-size: 1.5em;
+      margin-top: 15px;
+    }
+
+    .win-glow {
+      color: lime;
+      text-shadow: 0 0 10px lime, 0 0 20px lime;
+    }
+
+    .loss-glow {
+      color: red;
+      text-shadow: 0 0 10px red, 0 0 20px red;
+    }
+
+    .custom-id {
+      color: cyan;
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">WinGo Predictor</div>
+  <button class="button" onclick="showPopup()">START TIMER</button>
+
+  <div class="popup" id="floatingPopup">
+    <div class="popup-header">WinGo Timer</div>
+    <div class="timer" id="timer">--:--</div>
+    
+    <div class="delhi-time">
+      New Delhi Time: <span id="delhiClock">--:--</span>
+    </div>
+
+    <div class="popup-content" id="popupContent">SMALL</div>
+
+    <div class="scoreboard">
+      <p>Win: <span id="winCount">0</span> | Loss: <span id="lossCount">0</span></p>
+    </div>
+
+    <div class="custom-id">
+      ID: <span id="generatedID">Loading...</span>
+    </div>
+
+    <div class="popup-footer">
+      <button onclick="checkResult('WIN')">WIN</button>
+      <button onclick="checkResult('LOSS')">LOSS</button>
+    </div>
+
+    <div class="popup-footer">
+      <button onclick="exitPopup()">EXIT</button>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval;
+    let winCount = 0;
+    let lossCount = 0;
+    let canUpdateScore = true;
+
+    function startWinGoTimer() {
+      function updateTimer() {
+        let remainingSeconds = 60 - (Math.floor(Date.now() / 1000) % 60);
+        let seconds = remainingSeconds % 60;
+        document.getElementById('timer').textContent = `0:${seconds < 10 ? '0' : ''}${seconds}`;
+        if (remainingSeconds === 1) {
+          changePrediction();
+          canUpdateScore = true;
+          updateCustomID();
+        }
+      }
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function showPopup() {
+      document.getElementById('floatingPopup').style.display = 'block';
+      startWinGoTimer();
+      updateCustomID();
+      updateDelhiClock();
+    }
+
+    function exitPopup() {
+      document.getElementById('floatingPopup').style.display = 'none';
+      clearInterval(timerInterval);
+      clearInterval(delhiClockInterval);
+    }
+
+    function changePrediction() {
+      const content = document.getElementById('popupContent');
+      const options = ['SMALL', 'BIG'];
+      content.textContent = options[Math.floor(Math.random() * options.length)];
+    }
+
+    function checkResult(userChoice) {
+      if (!canUpdateScore) return;
+
+      const content = document.getElementById('popupContent');
+      if (userChoice === "WIN") {
+        content.classList.remove("loss-glow");
+        content.classList.add("win-glow");
+        winCount++;
+        document.getElementById('winCount').textContent = winCount;
+      } else {
+        content.classList.remove("win-glow");
+        content.classList.add("loss-glow");
+        lossCount++;
+        document.getElementById('lossCount').textContent = lossCount;
+      }
+
+      canUpdateScore = false;
+    }
+
+    function generateCustomID() {
+      let now = new Date();
+      
+      let year = now.getFullYear();
+      let month = ("0" + (now.getMonth() + 1)).slice(-2);
+      let day = ("0" + now.getDate()).slice(-2);
+      let formattedDate = `${year}${month}${day}`;
+
+      let totalMinutes = Math.floor(now.getTime() / (1000 * 60));
+      let customNumber = 10001 + totalMinutes - 330;
+
+      let result = formattedDate + "1000" + customNumber;
+      return result;
+    }
+
+    function updateCustomID() {
+      document.getElementById('generatedID').textContent = generateCustomID();
+    }
+
+    let delhiClockInterval;
+    function updateDelhiClock() {
+      function getDelhiTime() {
+        let now = new Date();
+        let utcOffset = now.getTimezoneOffset() * 60000;
+        let istTime = new Date(now.getTime() + utcOffset + (5.5 * 60 * 60 * 1000));
+
+        let hours = ("0" + istTime.getHours()).slice(-2);
+        let minutes = ("0" + istTime.getMinutes()).slice(-2);
+        let seconds = ("0" + istTime.getSeconds()).slice(-2);
+
+        document.getElementById("delhiClock").textContent = `${hours}:${minutes}:${seconds}`;
+      }
+      
+      getDelhiTime();
+      delhiClockInterval = setInterval(getDelhiTime, 1000);
+    }
+  </script>
+</body>
+</html>
