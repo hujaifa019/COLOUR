@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinGo Floating Timer</title>
+  <style>
+    body {
+      background-color: black;
+      color: red;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      height: 110vh; /* Extra height for scrolling */
+    }
+
+    .button-container {
+      margin-top: 50px;
+    }
+
+   .header{
+      margin-top: 50px;
+    }
+    
+    .button {
+      background-color: red;
+      color: white;
+      position: fixed;
+      padding: 15px 30px;
+      top: 30%;
+      left: 25%;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+  .header {
+      background-color: gold;
+      color: white;
+      position: fixed;
+      padding: 10px 20px;
+      top: 0%;
+      left: 5%;
+      border: 2px solid red;
+      border-radius: 10px;
+      box-shadow: 0 0 15px red;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: darkred;
+    }
+
+    /* Floating Popup */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 250px;
+      background-color: black;
+      border: 2px solid red;
+      border-radius: 10px;
+      box-shadow: 0 0 15px red;
+      text-align: center;
+      padding-top: 20px;
+      z-index: 9999;
+      cursor: grab;
+    }
+
+    .popup-header {
+      color: red;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+    .popup-content {
+      color: lime;
+      font-size: 2em;
+      margin: 20px 0;
+    }
+
+    .timer {
+      color: yellow;
+      font-size: 1.5em;
+      margin-bottom: 15px;
+    }
+
+    .popup-footer {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+    }
+
+    .popup-footer button {
+      background-color: black;
+      color: red;
+      border: 1px solid red;
+      padding: 5px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .popup-footer button:hover {
+      background-color: red;
+      color: white;
+    }
+
+    /* Toast Message */
+    .toast {
+      visibility: hidden;
+      min-width: 150px;
+      background-color: red;
+      color: white;
+      text-align: center;
+      border-radius: 5px;
+      padding: 10px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2em;
+      box-shadow: 0px 0px 10px red;
+      z-index: 10000;
+    }
+
+    .toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 1.5s;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeout {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+	<div class="header"> <h1>MADE BY HUJAIFA</h1></div>
+  <div class="button-container">
+    <button class="button" onclick="showPopup()">START TIMER</button>
+  </div>
+
+  <div class="popup" id="floatingPopup">
+  	<h1>MADE BY HUJAIFA</h1>
+    <div class="popup-header">WinGo Timer</div>
+    <div class="timer" id="timer">--:--</div>
+    <div class="popup-content" id="popupContent">SMALL</div>
+    <div class="popup-footer">
+      <button onclick="exitPopup()">EXIT</button>
+      <button onclick="hidePopup()">HIDE</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">ACTIVE</div>
+
+  <script>
+    let timerInterval;
+    let isHidden = false;
+    
+
+    async function fetchWinGoServerTime() {
+      try {
+        // Simulated API Call (Replace this with the real BDG WinGo API if available)
+        const serverResponse = await fetch('https://worldtimeapi.org/api/timezone/Etc/india');
+        const data = await serverResponse.json();
+        return new Date(data.utc_datetime).getTime();
+      } catch (error) {
+        console.error("Error fetching server time:", error);
+        return Date.now(); // Default to local time if API fails
+      }
+    }
+
+    async function startWinGoTimer() {
+      const serverTime = await fetchWinGoServerTime();
+      const localTime = Date.now();
+      let offset = serverTime - localTime;
+
+      function updateTimer() {
+        let now = Date.now() + offset;
+        let remainingSeconds = 60 - (Math.floor(now / 1000) % 60);
+
+        let minutes = Math.floor(remainingSeconds / 60);
+        let seconds = remainingSeconds % 60;
+        document.getElementById('timer').textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (remainingSeconds === 1) {
+          changeContent();
+        }
+      }
+
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function showPopup() {
+      document.getElementById('floatingPopup').style.display = 'block';
+      showToast();
+
+      if (!isHidden) {
+        startWinGoTimer();
+      }
+    }
+
+    function exitPopup() {
+      document.getElementById('floatingPopup').style.display = 'none';
+      clearInterval(timerInterval);
+      isHidden = false;
+    }
+
+    function hidePopup() {
+      document.getElementById('floatingPopup').style.display = 'none';
+      isHidden = true;
+    }
+
+    function changeContent() {
+      const content = document.getElementById('popupContent');
+      const options = ['SMALL', 'BIG'];
+      content.textContent = options[Math.floor(Math.random() * options.length)];
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // Dragging Feature
+    let popup = document.getElementById("floatingPopup");
+    let offsetX, offsetY, isDragging = false;
+
+    popup.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - popup.getBoundingClientRect().left;
+      offsetY = e.clientY - popup.getBoundingClientRect().top;
+      popup.style.cursor = "grabbing";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        popup.style.left = e.clientX - offsetX + "px";
+        popup.style.top = e.clientY - offsetY + "px";
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+      popup.style.cursor = "grab";
+    });
+  </script>
+</body>
+</html>
